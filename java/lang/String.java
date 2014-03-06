@@ -1,26 +1,6 @@
 /*
  * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
  */
 
 package java.lang;
@@ -111,12 +91,15 @@ public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence
 {
     /** The value is used for character storage. */
+    /** 存储String中的字符*/
     private final char value[];
 
     /** The offset is the first index of the storage that is used. */
+    /** 字符串首字母对应的字符数组下标*/
     private final int offset;
 
     /** The count is the number of characters in the String. */
+    /** 字符串中字符的数量*/
     private final int count;
 
     /** Cache the hash code for the string */
@@ -642,6 +625,8 @@ public final class String
 
 
     // Package private constructor which shares value array for speed.
+    // 重要方法，但是已经JDK7中取消，substring直接共享相同的char[].
+    // 可能会导致内存泄露,O(1)的substring从此消失鸟
     String(int offset, int count, char value[]) {
         this.value = value;
         this.offset = offset;
@@ -1945,8 +1930,9 @@ public final class String
      *             <code>endIndex</code> is larger than the length of
      *             this <code>String</code> object, or
      *             <code>beginIndex</code> is larger than
-     *             <code>endIndex</code>.
+     *             <code>endIndex</code>.   
      */
+    // 此方法截取字符串[begin,end)
     public String substring(int beginIndex, int endIndex) {
         if (beginIndex < 0) {
             throw new StringIndexOutOfBoundsException(beginIndex);
@@ -1989,6 +1975,7 @@ public final class String
      * @since 1.4
      * @spec JSR-51
      */
+    // 此方法就是调用substring,只是为了实现CharSequence接口.
     public CharSequence subSequence(int beginIndex, int endIndex) {
         return this.substring(beginIndex, endIndex);
     }
@@ -2107,6 +2094,7 @@ public final class String
      * @since 1.4
      * @spec JSR-51
      */
+    // 直接调用Pattern的方法
     public boolean matches(String regex) {
         return Pattern.matches(regex, this);
     }
@@ -2766,6 +2754,7 @@ public final class String
      *          space removed, or this string if it has no leading or
      *          trailing white space.
      */
+    // 去除字符串两端的空格，从源码可以看出是去除字符串两端ascii小于空格的字符.
     public String trim() {
         int len = count;
         int st = 0;

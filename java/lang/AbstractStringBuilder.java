@@ -118,6 +118,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * This implements the expansion semantics of ensureCapacity with no
      * size check or synchronization.
      */
+    // 初始容量不足，采取容量扩充，可见如果不初始化容量，在大量字符串处理的情况下就会导致效率问题
+    // 扩容的策略是capacity加倍然后+2
     void expandCapacity(int minimumCapacity) {
         int newCapacity = value.length * 2 + 2;
         if (newCapacity - minimumCapacity < 0)
@@ -500,6 +502,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param   str   the characters to be appended.
      * @return  a reference to this object.
      */
+    /** 首先检查容量新组成的字符串capacity是否满足*/
     public AbstractStringBuilder append(char[] str) {
         int len = str.length;
         ensureCapacityInternal(count + len);

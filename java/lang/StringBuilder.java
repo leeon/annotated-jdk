@@ -93,6 +93,7 @@ public final class StringBuilder
      * @throws     NegativeArraySizeException  if the <code>capacity</code>
      *               argument is less than <code>0</code>.
      */
+    // 初始化SB的容量，利用capacity可以优化性能.
     public StringBuilder(int capacity) {
         super(capacity);
     }
@@ -105,6 +106,7 @@ public final class StringBuilder
      * @param   str   the initial contents of the buffer.
      * @throws    NullPointerException if <code>str</code> is <code>null</code>
      */
+    // 默认capacity容量是16+初始化的字符串的大小
     public StringBuilder(String str) {
         super(str.length() + 16);
         append(str);
