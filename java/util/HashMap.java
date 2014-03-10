@@ -128,6 +128,7 @@ public class HashMap<K,V>
 
     /**
      * The default initial capacity - MUST be a power of two.
+     * 初始容量,要求必须是2的n次幂
      */
     static final int DEFAULT_INITIAL_CAPACITY = 16;
 
@@ -135,27 +136,32 @@ public class HashMap<K,V>
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
+     * 最大容量,当指定容量的时候，会用来检查是否超出最大容量，数值必须是1 << 30，相当于2^30
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
      * The load factor used when none specified in constructor.
+     * 默认装载因子
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     /**
      * The table, resized as necessary. Length MUST Always be a power of two.
+     * 数组结构，长度必须是2的n次幂，会自动变化大小。这就是hash表了
      */
     transient Entry[] table;
 
     /**
      * The number of key-value mappings contained in this map.
+     * map中k-v的个数
      */
     transient int size;
 
     /**
      * The next size value at which to resize (capacity * load factor).
      * @serial
+     * 到达此容量时map会扩容 计算方法 容量*装载因子
      */
     int threshold;
 
@@ -172,6 +178,7 @@ public class HashMap<K,V>
      * the HashMap or otherwise modify its internal structure (e.g.,
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
+     * Hashmap结构改变次数，用于fail-fast
      */
     transient int modCount;
 
@@ -260,6 +267,7 @@ public class HashMap<K,V>
      * because HashMap uses power-of-two length hash tables, that
      * otherwise encounter collisions for hashCodes that do not differ
      * in lower bits. Note: Null keys always map to hash 0, thus index 0.
+     * 对已有的hashcode进行hash，主要是为了防止用低质量哈希函数产生太多的碰撞.
      */
     static int hash(int h) {
         // This function ensures that hashCodes that differ only by
@@ -333,8 +341,8 @@ public class HashMap<K,V>
      * others.
      */
     private V getForNullKey() {
-        for (Entry<K,V> e = table[0]; e != null; e = e.next) {
-            if (e.key == null)
+        for (Entry<K,V> e = table[0]; e != null; e = e.next) { //直接去table[0]
+            if (e.key == null) //注意有可能其他非null得hash也是0
                 return e.value;
         }
         return null;
@@ -376,6 +384,8 @@ public class HashMap<K,V>
      * If the map previously contained a mapping for the key, the old
      * value is replaced.
      *
+     * 插入k-v,如果已经存在相同的key,则替换key对应的value
+     *
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with <tt>key</tt>, or
@@ -384,13 +394,13 @@ public class HashMap<K,V>
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
     public V put(K key, V value) {
-        if (key == null)
-            return putForNullKey(value);
-        int hash = hash(key.hashCode());
-        int i = indexFor(hash, table.length);
+        if (key == null) 
+            return putForNullKey(value); //如果key为null,专门处理以null为key的
+        int hash = hash(key.hashCode()); //获得key的hash,二次hash的目的是防止用户编写的hashcode方法质量不高
+        int i = indexFor(hash, table.length); //通过对table.length求模获得Bucket的位置
         for (Entry<K,V> e = table[i]; e != null; e = e.next) {
             Object k;
-            if (e.hash == hash && ((k = e.key) == key || key.equals(k))) {
+            if (e.hash == hash && ((k = e.key) == key || key.equals(k))) { //已经存在相同key的元素，直接替换
                 V oldValue = e.value;
                 e.value = value;
                 e.recordAccess(this);
@@ -398,13 +408,14 @@ public class HashMap<K,V>
             }
         }
 
-        modCount++;
+        modCount++; //插入元素引起map结构变化
         addEntry(hash, key, value, i);
         return null;
     }
 
     /**
      * Offloaded version of put for null keys
+     * null 对应的hash为0
      */
     private V putForNullKey(V value) {
         for (Entry<K,V> e = table[0]; e != null; e = e.next) {
@@ -469,7 +480,7 @@ public class HashMap<K,V>
     void resize(int newCapacity) {
         Entry[] oldTable = table;
         int oldCapacity = oldTable.length;
-        if (oldCapacity == MAXIMUM_CAPACITY) {
+        if (oldCapacity == MAXIMUM_CAPACITY) {//如果容量已经达到最大，则threshold设置为最大，以后不会再resize
             threshold = Integer.MAX_VALUE;
             return;
         }
@@ -482,6 +493,7 @@ public class HashMap<K,V>
 
     /**
      * Transfers all entries from current table to newTable.
+     * 将扩容前的数据转移到新的表中，可见扩容的代价是比较高的
      */
     void transfer(Entry[] newTable) {
         Entry[] src = table;
@@ -684,6 +696,7 @@ public class HashMap<K,V>
         return result;
     }
 
+    // 具体存储k-v的结构，以连表的形式存在
     static class Entry<K,V> implements Map.Entry<K,V> {
         final K key;
         V value;
@@ -784,8 +797,8 @@ public class HashMap<K,V>
 
     private abstract class HashIterator<E> implements Iterator<E> {
         Entry<K,V> next;        // next entry to return
-        int expectedModCount;   // For fast-fail
-        int index;              // current slot
+        int expectedModCount;   // 用于fail-fast
+        int index;              // current slotå
         Entry<K,V> current;     // current entry
 
         HashIterator() {
@@ -802,7 +815,7 @@ public class HashMap<K,V>
         }
 
         final Entry<K,V> nextEntry() {
-            if (modCount != expectedModCount)
+            if (modCount != expectedModCount) //说明iterator之后修改了结构，触发fail-fast
                 throw new ConcurrentModificationException();
             Entry<K,V> e = next;
             if (e == null)
